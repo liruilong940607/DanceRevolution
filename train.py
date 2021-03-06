@@ -9,7 +9,7 @@ import torch.utils.data
 from dataset import DanceDataset, paired_collate_fn
 from model import Encoder, Decoder, Model
 from utils.log import Logger
-from utils.functional import str2bool, load_data, printer
+from utils.functional import str2bool, load_data, printer, load_data_aist
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -114,6 +114,8 @@ def get_args():
     parser.add_argument('--cuda', type=str2bool, nargs='?', metavar='BOOL',
                         const=True, default=torch.cuda.is_available(),
                         help='whether to use GPU acceleration.')
+    
+    parser.add_argument('--aist', action='store_true', help='train on AIST++')
 
     return parser.parse_args()
 
@@ -149,16 +151,22 @@ def main():
     device = torch.device('cuda' if args.cuda else 'cpu')
 
     # Loading data
-    train_music_data, train_dance_data, _ = load_data(
-        args.train_dir, interval=args.seq_len, data_type=args.data_type)
+    if args.aist:
+        print ("train with AIST++ dataset!")
+        train_music_data, train_dance_data, _ = load_data_aist(
+            args.train_dir, interval=args.seq_len)
+    else:    
+        train_music_data, train_dance_data, _ = load_data(
+            args.train_dir, interval=args.seq_len, data_type=args.data_type)
     training_data = prepare_dataloader(train_music_data, train_dance_data, args)
+    print ("data shape:", len(training_data))
 
     encoder = Encoder(args)
     decoder = Decoder(args)
     model = Model(encoder, decoder, args, device=device)
 
-    for name, parameters in model.named_parameters():
-        print(name, ':', parameters.size())
+    # for name, parameters in model.named_parameters():
+    #     print(name, ':', parameters.size())
 
     # Data Parallel to use multi-gpu
     model = nn.DataParallel(model).to(device)

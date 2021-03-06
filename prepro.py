@@ -123,6 +123,7 @@ def load_dance_data(dance_dir, remove_hand_keypoints=True, remove_face_keypoints
                     poses.append(key_points.tolist())
         dances.append(poses)
         print(np.shape(poses))
+        exit()
 
     return dances
 

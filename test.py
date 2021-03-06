@@ -6,12 +6,13 @@ import numpy as np
 import torch
 import torch.utils.data
 from dataset import DanceDataset, paired_collate_fn
-from utils.functional import str2bool, load_data
+from utils.functional import str2bool, load_data, load_data_aist
 from generator import Generator
 from PIL import Image
 from keypoint2img import read_keypoints
 from multiprocessing import Pool
 from functools import partial
+import time
 
 
 pose_keypoints_num = 25
@@ -40,6 +41,8 @@ def get_args():
     parser.add_argument('--cuda', type=str2bool, nargs='?', metavar='BOOL',
                         const=True, default=torch.cuda.is_available(),
                         help='whether to use GPU acceleration.')
+
+    parser.add_argument('--aist', action='store_true', help='test on AIST++')
 
     return parser.parse_args()
 
@@ -134,12 +137,19 @@ def write2json(dances, dance_names, args):
 
 def main():
     args = get_args()
+    if args.aist:
+        import vedo
 
     if not os.path.exists(args.json_dir):
         os.makedirs(args.json_dir)
 
-    music_data, dance_data, dance_names = load_data(
-        args.input_dir, interval=None, data_type=args.data_type)
+    if args.aist:
+        print ("test with AIST++ dataset!")
+        music_data, dance_data, dance_names = load_data_aist(
+            args.input_dir, interval=None)
+    else:    
+        music_data, dance_data, dance_names = load_data(
+            args.input_dir, interval=None)
 
     device = torch.device('cuda' if args.cuda else 'cpu')
 
@@ -152,22 +162,43 @@ def main():
     generator = Generator(args.model, device)
 
     results = []
-    for batch in tqdm(test_loader, desc='Generating dance poses'):
+    for i, batch in enumerate(tqdm(test_loader, desc='Generating dance poses')):
         # Prepare data
-        src_seq, src_pos, _ = map(lambda x: x.to(device), batch)
-        pose_seq = generator.generate(src_seq, src_pos)
+        src_seq, src_pos, tgt_pose = map(lambda x: x.to(device), batch)
+        pose_seq = generator.generate(src_seq[:600], src_pos[:600])  # first 10 secs
         results.append(pose_seq)
 
-    # Visualize generated dance poses
-    np_dances = []
-    for i in range(len(results)):
-        np_dance = results[i][0].data.cpu().numpy()
-        root = np_dance[:, 2*8:2*9]
-        np_dance = np_dance + np.tile(root, (1, 25))
-        np_dance[:, 2*8:2*9] = root
-        np_dances.append(np_dance)
-    write2json(np_dances, dance_names, args)
-    visualize(args)
+        if args.aist:
+            np_dance = pose_seq[0].data.cpu().numpy()
+            root = np_dance[:, :3]
+            np_dance = np_dance + np.tile(root, (1, 24))
+            np_dance[:, :3] = root
+            np_dance = np_dance.reshape(np_dance.shape[0], -1, 3)
+            print (np_dance.shape)
+            # save
+            save_path = os.path.join(args.json_dir, dance_names[i])
+            np.save(save_path, np_dance)
+            # visualize
+            for frame in np_dance:
+                pts = vedo.Points(frame, r=20)
+                vedo.show(pts, interactive=False)
+                # time.sleep(0.02)
+            # exit()
+
+    if args.aist:
+        pass
+
+    else:
+        # Visualize generated dance poses
+        np_dances = []
+        for i in range(len(results)):
+            np_dance = results[i][0].data.cpu().numpy()
+            root = np_dance[:, 2*8:2*9]
+            np_dance = np_dance + np.tile(root, (1, 25))
+            np_dance[:, 2*8:2*9] = root
+            np_dances.append(np_dance)
+        write2json(np_dances, dance_names, args)
+        visualize(args)
 
 
 if __name__ == '__main__':

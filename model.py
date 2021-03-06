@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils.pose import BOS_POSE
+from utils.pose import BOS_POSE, BOS_POSE_AIST
 from longformer.longformer import LongformerSelfAttention, LongformerConfig
 
 
@@ -121,7 +121,8 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, args):
         super().__init__()
-
+        self.args = args
+        print ("self.args.aist", self.args.aist)
         self.hidden_size = args.decoder_hidden_size
 
         self.tgt_emb = nn.Linear(args.pose_dim, self.hidden_size)
@@ -142,11 +143,18 @@ class Decoder(nn.Module):
         vec_h = [h0, h1, h2]
         vec_c = [c0, c1, c2]
 
-        bos = BOS_POSE
-        bos = np.tile(bos, (bsz, 1))
-        root = bos[:, 2 * 8:2 * 9]
-        bos = bos - np.tile(root, (1, 25))
-        bos[:, 2 * 8:2 * 9] = root
+        if self.args.aist:
+            bos = BOS_POSE_AIST
+            bos = np.tile(bos, (bsz, 1))
+            root = bos[:, :3] 
+            bos = bos - np.tile(root, (1, 24)) 
+            bos[:, :3] = root
+        else:
+            bos = BOS_POSE
+            bos = np.tile(bos, (bsz, 1))
+            root = bos[:, 2 * 8:2 * 9]
+            bos = bos - np.tile(root, (1, 25))
+            bos[:, 2 * 8:2 * 9] = root
         out_pose = torch.from_numpy(bos).float().to(device)
 
         return (vec_h, vec_c), out_pose

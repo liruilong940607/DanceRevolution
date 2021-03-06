@@ -74,6 +74,39 @@ def load_data(data_dir, interval=900, data_type='2D'):
     return music_data, dance_data, [fn.replace('.json', '') for fn in fnames]
 
 
+def load_data_aist(data_dir, interval=120):
+    music_data, dance_data = [], []
+    fnames = sorted(os.listdir(data_dir))
+    # print(fnames)
+    # fnames = fnames[:10]  # For debug
+    if ".ipynb_checkpoints" in fnames:
+        fnames.remove(".ipynb_checkpoints")
+    for fname in fnames:
+        path = os.path.join(data_dir, fname)
+        with open(path) as f:
+            sample_dict = json.loads(f.read())
+            np_music = np.array(sample_dict['music_array'])
+            np_dance = np.array(sample_dict['dance_array'])
+
+            root = np_dance[:, :3]  # the root
+            np_dance = np_dance - np.tile(root, (1, 24))  # Calculate relative offset with respect to root
+            np_dance[:, :3] = root
+
+            if interval is not None:
+                seq_len, dim = np_music.shape
+                for i in range(0, seq_len, interval):
+                    music_sub_seq = np_music[i: i + interval]
+                    dance_sub_seq = np_dance[i: i + interval]
+                    if len(music_sub_seq) == interval:
+                        music_data.append(music_sub_seq)
+                        dance_data.append(dance_sub_seq)
+            else:
+                music_data.append(np_music)
+                dance_data.append(np_dance)
+
+    return music_data, dance_data, [fn.replace('.json', '') for fn in fnames]
+
+
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True

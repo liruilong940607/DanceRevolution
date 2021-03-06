@@ -1,0 +1,5 @@
+checkpoints_*
+outputs_*
+__pycache__
+data*
+60FPS_aist*
