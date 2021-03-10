@@ -2,24 +2,24 @@
 
 # export CUDA_VISIBLE_DEVICES=3
 
-model_dir=60FPS_aist
+model_dir=60FPS_aist_rot
 
-python train.py --train_dir data_aist/train \
+python train.py --train_dir data_aist_rot/train \
                 --output_dir ${model_dir} \
-                --batch_size 32 \
+                --batch_size 16 \
                 --lr 0.0001 \
                 --dropout 0.05 \
                 --frame_dim 438 \
                 --encoder_hidden_size 1024 \
-                --pose_dim 72 \
+                --pose_dim 219 \
                 --decoder_hidden_size 512 \
-                --seq_len 420 \
+                --seq_len 1200 \
                 --max_seq_len 4500 \
                 --num_heads 8 \
                 --num_layers 3 \
                 --window_size 100 \
                 --fixed_step 10 \
-                --alpha 0.04 \
+                --alpha 0.01 \
                 --save_per_epochs 100 \
                 --aist \
                 --rotmat 

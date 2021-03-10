@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils.pose import BOS_POSE, BOS_POSE_AIST
+from utils.pose import BOS_POSE, BOS_POSE_AIST, BOS_POSE_AIST_ROT
 from longformer.longformer import LongformerSelfAttention, LongformerConfig
 
 
@@ -144,11 +144,14 @@ class Decoder(nn.Module):
         vec_c = [c0, c1, c2]
 
         if self.args.aist:
-            bos = BOS_POSE_AIST
-            bos = np.tile(bos, (bsz, 1))
-            root = bos[:, :3] 
-            bos = bos - np.tile(root, (1, 24)) 
-            bos[:, :3] = root
+            if self.args.rotmat:
+                bos = BOS_POSE_AIST_ROT
+            else:
+                bos = BOS_POSE_AIST
+                bos = np.tile(bos, (bsz, 1))
+                root = bos[:, :3] 
+                bos = bos - np.tile(root, (1, 24)) 
+                bos[:, :3] = root
         else:
             bos = BOS_POSE
             bos = np.tile(bos, (bsz, 1))

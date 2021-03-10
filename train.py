@@ -116,6 +116,7 @@ def get_args():
                         help='whether to use GPU acceleration.')
     
     parser.add_argument('--aist', action='store_true', help='train on AIST++')
+    parser.add_argument('--rotmat', action='store_true', help='train rotation matrix')
 
     return parser.parse_args()
 
@@ -154,7 +155,7 @@ def main():
     if args.aist:
         print ("train with AIST++ dataset!")
         train_music_data, train_dance_data, _ = load_data_aist(
-            args.train_dir, interval=args.seq_len)
+            args.train_dir, interval=args.seq_len, rotmat=args.rotmat)
     else:    
         train_music_data, train_dance_data, _ = load_data(
             args.train_dir, interval=args.seq_len, data_type=args.data_type)
