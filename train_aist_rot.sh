@@ -20,6 +20,6 @@ python train.py --train_dir data_aist_rot/train \
                 --window_size 100 \
                 --fixed_step 10 \
                 --alpha 0.01 \
-                --save_per_epochs 100 \
+                --save_per_epochs 20 \
                 --aist \
                 --rotmat 

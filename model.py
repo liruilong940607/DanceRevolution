@@ -146,6 +146,7 @@ class Decoder(nn.Module):
         if self.args.aist:
             if self.args.rotmat:
                 bos = BOS_POSE_AIST_ROT
+                bos = np.tile(bos, (bsz, 1))
             else:
                 bos = BOS_POSE_AIST
                 bos = np.tile(bos, (bsz, 1))
