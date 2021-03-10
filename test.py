@@ -244,12 +244,12 @@ def main():
             # save
             save_path = os.path.join(args.json_dir, dance_names[i]+f"_{random_id:04d}")
             np.save(save_path, np_dance)
-            # # visualize
-            # for frame in np_dance:
-            #     pts = vedo.Points(frame, r=20)
-            #     vedo.show(pts, interactive=False)
-            #     # time.sleep(0.02)
-            # # exit()
+            # visualize
+            for frame in np_dance:
+                pts = vedo.Points(frame, r=20)
+                vedo.show(pts, interactive=False)
+                time.sleep(0.1)
+            exit()
 
     if args.aist:
         pass
